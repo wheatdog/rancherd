@@ -122,17 +122,17 @@ func (p *plan) addInstructions(cfg *config.Config, dataDir string) error {
 	// If clusterrepo check fails, it waits 5 minutes and retries.
 	// Install harvester-cluster-repo deployment before clusterrepo,
 	// so we can avoid the 5 minutes waiting time.
-	// if err := p.addInstruction(resources.ToHarvesterClusterRepoInstruction(cfg.RancherInstallerImage, cfg.SystemDefaultRegistry, k8sVersion, dataDir)); err != nil {
-	// 	return err
-	// }
+	if err := p.addInstruction(resources.ToHarvesterClusterRepoInstruction(k8sVersion, dataDir)); err != nil {
+		return err
+	}
 
-	// if err := p.addInstruction(resources.ToWaitHarvesterClusterRepoInstruction(k8sVersion)); err != nil {
-	// 	return err
-	// }
+	if err := p.addInstruction(resources.ToWaitHarvesterClusterRepoInstruction(k8sVersion)); err != nil {
+		return err
+	}
 
-	// if err := p.addInstruction(resources.ToInstruction(cfg.RancherInstallerImage, cfg.SystemDefaultRegistry, k8sVersion, dataDir)); err != nil {
-	// 	return err
-	// }
+	if err := p.addInstruction(resources.ToInstruction(k8sVersion, dataDir)); err != nil {
+		return err
+	}
 
 	// if err := p.addInstruction(rancher.ToWaitSUCInstruction(cfg.RancherInstallerImage, cfg.SystemDefaultRegistry, k8sVersion)); err != nil {
 	// 	return err

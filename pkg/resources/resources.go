@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/harvester/rancherd/pkg/config"
-	"github.com/harvester/rancherd/pkg/images"
 	"github.com/harvester/rancherd/pkg/kubectl"
 	"github.com/harvester/rancherd/pkg/self"
 	"github.com/harvester/rancherd/pkg/versions"
@@ -227,7 +226,7 @@ func GetBootstrapManifests(dataDir string) string {
 	return fmt.Sprintf("%s/bootstrapmanifests/rancherd.yaml", dataDir)
 }
 
-func ToInstruction(imageOverride, systemDefaultRegistry, k8sVersion, dataDir string) (*applyinator.OneTimeInstruction, error) {
+func ToInstruction(k8sVersion, dataDir string) (*applyinator.OneTimeInstruction, error) {
 	bootstrap := GetBootstrapManifests(dataDir)
 	cmd, err := self.Self()
 	if err != nil {
@@ -236,7 +235,6 @@ func ToInstruction(imageOverride, systemDefaultRegistry, k8sVersion, dataDir str
 	instruction := &applyinator.OneTimeInstruction{}
 	instruction.Name = "bootstrap"
 	instruction.SaveOutput = true
-	instruction.Image = images.GetInstallerImage(imageOverride, systemDefaultRegistry, k8sVersion)
 	instruction.Args = []string{"retry", kubectl.Command(k8sVersion), "apply", "--validate=false", "-f", bootstrap}
 	instruction.Command = cmd
 	instruction.Env = kubectl.Env(k8sVersion)
@@ -247,7 +245,7 @@ func GetHarvesterClusterRepoManifests(dataDir string) string {
 	return fmt.Sprintf("%s/bootstrapmanifests/harvester-cluster-repo.yaml", dataDir)
 }
 
-func ToHarvesterClusterRepoInstruction(imageOverride, systemDefaultRegistry, k8sVersion, dataDir string) (*applyinator.OneTimeInstruction, error) {
+func ToHarvesterClusterRepoInstruction(k8sVersion, dataDir string) (*applyinator.OneTimeInstruction, error) {
 	bootstrap := GetHarvesterClusterRepoManifests(dataDir)
 	cmd, err := self.Self()
 	if err != nil {
@@ -256,7 +254,6 @@ func ToHarvesterClusterRepoInstruction(imageOverride, systemDefaultRegistry, k8s
 	instruction := &applyinator.OneTimeInstruction{}
 	instruction.Name = "harvester-cluster-repo"
 	instruction.SaveOutput = true
-	instruction.Image = images.GetInstallerImage(imageOverride, systemDefaultRegistry, k8sVersion)
 	instruction.Args = []string{"retry", kubectl.Command(k8sVersion), "apply", "--validate=false", "-f", bootstrap}
 	instruction.Command = cmd
 	instruction.Env = kubectl.Env(k8sVersion)
