@@ -12,14 +12,12 @@ import (
 	"github.com/rancher/wrangler/v3/pkg/randomtoken"
 	"github.com/rancher/wrangler/v3/pkg/yaml"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/mod/semver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/harvester/rancherd/pkg/config"
 	"github.com/harvester/rancherd/pkg/kubectl"
 	"github.com/harvester/rancherd/pkg/self"
-	"github.com/harvester/rancherd/pkg/versions"
 )
 
 const (
@@ -36,13 +34,14 @@ func ToBootstrapFile(config *config.Config, path string) (*applyinator.File, err
 		nodeName = strings.Split(hostname, ".")[0]
 	}
 
-	k8sVersion, err := versions.K8sVersion(config.KubernetesVersion)
-	if err != nil {
-		return nil, err
-	}
+	// k8sVersion, err := versions.K8sVersion(config.KubernetesVersion)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	token := config.Token
 	if token == "" {
+		var err error
 		token, err = randomtoken.Generate()
 		if err != nil {
 			return nil, err
@@ -69,23 +68,23 @@ func ToBootstrapFile(config *config.Config, path string) (*applyinator.File, err
 				"name": "fleet-local",
 			},
 		},
-	}, v1.GenericMap{
-		Data: map[string]interface{}{
-			"kind":       "Cluster",
-			"apiVersion": "provisioning.cattle.io/v1",
-			"metadata": map[string]interface{}{
-				"name":      "local",
-				"namespace": "fleet-local",
-				"labels": map[string]interface{}{
-					"provisioning.cattle.io/management-cluster-name": "local",
-				},
-			},
-			"spec": map[string]interface{}{
-				"kubernetesVersion": k8sVersion,
-				// Rancher needs a non-null rkeConfig to apply system-upgrade-controller managed chart.
-				"rkeConfig": map[string]interface{}{},
-			},
-		},
+		// }, v1.GenericMap{
+		// 	Data: map[string]interface{}{
+		// 		"kind":       "Cluster",
+		// 		"apiVersion": "provisioning.cattle.io/v1",
+		// 		"metadata": map[string]interface{}{
+		// 			"name":      "local",
+		// 			"namespace": "fleet-local",
+		// 			"labels": map[string]interface{}{
+		// 				"provisioning.cattle.io/management-cluster-name": "local",
+		// 			},
+		// 		},
+		// 		"spec": map[string]interface{}{
+		// 			"kubernetesVersion": k8sVersion,
+		// 			// Rancher needs a non-null rkeConfig to apply system-upgrade-controller managed chart.
+		// 			"rkeConfig": map[string]interface{}{},
+		// 		},
+		// 	},
 	}, v1.GenericMap{
 		Data: map[string]interface{}{
 			"kind":       "Secret",
@@ -100,74 +99,75 @@ func ToBootstrapFile(config *config.Config, path string) (*applyinator.File, err
 				"agentToken":  []byte(token),
 			},
 		},
-	}, v1.GenericMap{
-		Data: map[string]interface{}{
-			"apiVersion": "catalog.cattle.io/v1",
-			"kind":       "ClusterRepo",
-			"metadata": map[string]interface{}{
-				"name": "rancher-stable",
-			},
-			"spec": map[string]interface{}{
-				"url": "https://releases.rancher.com/server-charts/stable",
-			},
-		},
 	})
+	// , v1.GenericMap{
+	// 	Data: map[string]interface{}{
+	// 		"apiVersion": "catalog.cattle.io/v1",
+	// 		"kind":       "ClusterRepo",
+	// 		"metadata": map[string]interface{}{
+	// 			"name": "rancher-stable",
+	// 		},
+	// 		"spec": map[string]interface{}{
+	// 			"url": "https://releases.rancher.com/server-charts/stable",
+	// 		},
+	// 	},
+	// })
 
 	// Rancher save CRT token into an underlying secret since v2.15.0
 	// As a result, we have to update the secret direct to set the token
 	// This could be changed in the future version of Rancher
 	// https://github.com/rancher/rancher/issues/56071#issuecomment-5168624729
-	if semver.Compare(config.RancherVersion, "v2.15.0") >= 0 {
-		resources = append(resources, v1.GenericMap{
-			Data: map[string]interface{}{
-				"kind":       "Secret",
-				"apiVersion": "v1",
-				"metadata": map[string]interface{}{
-					"name":      "crt-token-default-token",
-					"namespace": "local",
-				},
-				"type": "Opaque",
-				"data": map[string]interface{}{
-					"token": []byte(token),
-				},
-			},
-		})
-	} else {
-		resources = append(resources, v1.GenericMap{
-			Data: map[string]interface{}{
-				"kind":       "ClusterRegistrationToken",
-				"apiVersion": "management.cattle.io/v3",
-				"metadata": map[string]interface{}{
-					"name":      "default-token",
-					"namespace": "local",
-				},
-				"spec": map[string]interface{}{
-					"clusterName": "local",
-				},
-				"status": map[string]interface{}{
-					"token": token,
-				},
-			},
-		})
-	}
+	// if semver.Compare(config.RancherVersion, "v2.15.0") >= 0 {
+	// 	resources = append(resources, v1.GenericMap{
+	// 		Data: map[string]interface{}{
+	// 			"kind":       "Secret",
+	// 			"apiVersion": "v1",
+	// 			"metadata": map[string]interface{}{
+	// 				"name":      "crt-token-default-token",
+	// 				"namespace": "local",
+	// 			},
+	// 			"type": "Opaque",
+	// 			"data": map[string]interface{}{
+	// 				"token": []byte(token),
+	// 			},
+	// 		},
+	// 	})
+	// } else {
+	// 	resources = append(resources, v1.GenericMap{
+	// 		Data: map[string]interface{}{
+	// 			"kind":       "ClusterRegistrationToken",
+	// 			"apiVersion": "management.cattle.io/v3",
+	// 			"metadata": map[string]interface{}{
+	// 				"name":      "default-token",
+	// 				"namespace": "local",
+	// 			},
+	// 			"spec": map[string]interface{}{
+	// 				"clusterName": "local",
+	// 			},
+	// 			"status": map[string]interface{}{
+	// 				"token": token,
+	// 			},
+	// 		},
+	// 	})
+	// }
 
 	// Since Rancher v2.15.0, this annotation is needed on management cluster
 	// such that the cluster can be marked ready.
 	// https://github.com/rancher/rancher/blob/5221238cb9d8413e5fee60bc79fa911edac82a8a/pkg/capr/configserver/identity.go#L83-L95
-	if semver.Compare(config.RancherVersion, "v2.15.0") >= 0 {
-		resources = append(resources, v1.GenericMap{
-			Data: map[string]interface{}{
-				"kind":       "Cluster",
-				"apiVersion": "management.cattle.io/v3",
-				"metadata": map[string]interface{}{
-					"name": "local",
-					"annotations": map[string]interface{}{
-						"provisioning.cattle.io/administrated": "true",
-					},
-				},
-			},
-		})
-	}
+	// if semver.Compare(config.RancherVersion, "v2.15.0") >= 0 {
+	// 	resources = append(resources, v1.GenericMap{
+	// 		Data: map[string]interface{}{
+	// 			"kind":       "Cluster",
+	// 			"apiVersion": "management.cattle.io/v3",
+	// 			"metadata": map[string]interface{}{
+	// 				"name": "local",
+	// 				"annotations": map[string]interface{}{
+	// 					"provisioning.cattle.io/administrated": "true",
+	// 				},
+	// 			},
+	// 		},
+	// 	})
+	// }
 
 	return ToFile(resources, path)
 }
