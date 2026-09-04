@@ -190,13 +190,7 @@ func ToHarvesterClusterRepoFile(path string) (*applyinator.File, error) {
 		return nil, err
 	}
 
-	resources := []v1.GenericMap{}
-	for _, resource := range result.Resources {
-		if resource.Data["kind"] == "Deployment" || resource.Data["kind"] == "Service" {
-			resources = append(resources, resource)
-		}
-	}
-	return ToFile(resources, path)
+	return ToFile(result.Resources, path)
 }
 
 func ToFile(resources []v1.GenericMap, path string) (*applyinator.File, error) {
